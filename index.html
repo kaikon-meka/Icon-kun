@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="page-title">カスタムアイコンメーカー</title>
+  <link id="dynamic-icon" rel="icon" type="image/png" href="">
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="">
+  <link id="dynamic-manifest" rel="manifest" href="">
+  <style>
+    :root {
+      --bg: #121417;
+      --card: #1e2228;
+      --accent: #00d2ff;
+      --text: #f0f4f8;
+      --sub: #94a3b8;
+      --border: #2e343d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px 16px 60px; line-height: 1.5; }
+    .container { max-width: 480px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; color: var(--accent); letter-spacing: 0.03em; }
+    .desc { font-size: 0.85rem; color: var(--sub); margin-bottom: 20px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+    label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; color: #cbd5e1; }
+    input[type="text"], input[type="url"] {
+      width: 100%; background: #0f1115; border: 1px solid var(--border); color: var(--text);
+      padding: 12px; border-radius: 10px; font-size: 0.95rem; margin-bottom: 14px; outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    .preview-area {
+      display: flex; align-items: center; gap: 16px; background: #0f1115;
+      padding: 14px; border-radius: 12px; margin-bottom: 16px; border: 1px dashed var(--border);
+    }
+    #preview-canvas {
+      width: 72px; height: 72px; border-radius: 18px; background: #2a2f38;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4); flex-shrink: 0;
+    }
+    .preview-info { font-size: 0.85rem; }
+    .preview-info strong { display: block; font-size: 1rem; color: #fff; margin-bottom: 2px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab-btn {
+      flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: #0f1115; color: var(--sub); font-weight: 700; font-size: 0.85rem; cursor: pointer;
+    }
+    .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+    input[type="color"] { width: 48px; height: 42px; border: none; border-radius: 8px; background: none; cursor: pointer; }
+    .file-label {
+      display: block; text-align: center; padding: 14px; background: #262b33;
+      border: 1px dashed var(--accent); border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--accent);
+    }
+    input[type="file"] { display: none; }
+    .btn-primary {
+      width: 100%; padding: 15px; border: none; border-radius: 12px;
+      background: linear-gradient(135deg, #00d2ff, #0080ff); color: #000;
+      font-size: 1rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(0,210,255,0.3);
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .guide-box {
+      display: none; background: rgba(0, 210, 255, 0.1); border: 1px solid var(--accent);
+      border-radius: 12px; padding: 16px; margin-top: 16px; font-size: 0.9rem;
+    }
+    .guide-box h3 { color: var(--accent); font-size: 1rem; margin-bottom: 8px; }
+    .guide-box ol { padding-left: 20px; }
+    .guide-box li { margin-bottom: 6px; }
+    /* リダイレクト実行中の画面 */
+    #launcher-screen {
+      display: none; position: fixed; inset: 0; background: var(--bg);
+      flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 9999;
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- アイコンから起動した時の自動転送画面 -->
+  <div id="launcher-screen">
+    <div class="spinner"></div>
+    <p id="launch-msg" style="font-weight:700; font-size:1.1rem;">アプリを起動中...</p>
+  </div>
+
+  <!-- 設定・作成画面 -->
+  <div class="container" id="builder-screen">
+    <h1>🛠️ カスタムアイコンメーカー</h1>
+    <p class="desc">好きな画像や絵文字で、WEBアプリのホーム画面アイコンを量産！</p>
+
+    <div class="card">
+      <div class="preview-area">
+        <canvas id="preview-canvas" width="512" height="512"></canvas>
+        <div class="preview-info">
+          <strong id="preview-name">マイアプリ</strong>
+          <span style="color:var(--sub); font-size:0.8rem;">ホーム画面の表示イメージ</span>
+        </div>
+      </div>
+
+      <label>1. アプリの名前（ホーム画面に出る文字）</label>
+      <input type="text" id="app-name" placeholder="例：GPS自動停止版" value="マイアプリ">
+
+      <label>2. 開きたいURL（GitHubやローカルサーバー）</label>
+      <input type="url" id="app-url" placeholder="https://kaikon-meka.github.io/...">
+
+      <label>3. アイコンのデザインを選ぶ</label>
+      <div class="tabs">
+        <button type="button" class="tab-btn active" onclick="switchTab('image')">🖼️ 写真・画像から</button>
+        <button type="button" class="tab-btn" onclick="switchTab('emoji')">😀 絵文字＋背景色</button>
+      </div>
+
+      <div id="panel-image" class="panel active">
+        <label class="file-label" for="img-input">📁 スマホから画像を選ぶ</label>
+        <input type="file" id="img-input" accept="image/*">
+      </div>
+
+      <div id="panel-emoji" class="panel">
+        <div class="row">
+          <div style="flex:1;">
+            <label style="font-size:0.75rem;">好きな絵文字</label>
+            <input type="text" id="emoji-char" value="🚗" maxlength="4" style="margin-bottom:0; text-align:center; font-size:1.4rem;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;">背景色</label>
+            <input type="color" id="bg-color" value="#1e293b">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="btn-primary" onclick="prepareShortcut()">✨ このアイコンで準備する！</button>
+
+    <div class="guide-box" id="guide-box">
+      <h3>✅ 準備完了！あと1ステップ！</h3>
+      <ol>
+        <li>画面右上の <strong>「︙」（メニュー）</strong> をタップ</li>
+        <li><strong>「ホーム画面に追加」</strong> をタップ</li>
+        <li>プレビューに<strong>今作ったアイコン</strong>が出ていれば成功！そのまま「追加」を押してね！</li>
+      </ol>
+      <p style="font-size:0.8rem; color:var(--sub); margin-top:8px;">※追加したアイコンをタップすると、指定したURLへ自動でジャンプします！</p>
+    </div>
+  </div>
+
+<script>
+  const canvas = document.getElementById('preview-canvas');
+  const ctx = canvas.getContext('2d');
+  const nameInput = document.getElementById('app-name');
+  const urlInput = document.getElementById('app-url');
+  const emojiInput = document.getElementById('emoji-char');
+  const colorInput = document.getElementById('bg-color');
+  const imgInput = document.getElementById('img-input');
+
+  let currentMode = 'image';
+  let uploadedImg = null;
+
+  // 起動時にURLパラメータをチェック（ショートカットからの起動判定）
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const targetUrl = params.get('go');
+    const appTitle = params.get('title');
+
+    if (targetUrl) {
+      // ショートカットから起動された場合：タイトルとアイコンを復元しつつ即ジャンプ！
+      if (appTitle) document.title = appTitle;
+      const savedIcon = localStorage.getItem('icon_' + targetUrl);
+      if (savedIcon) applyIconToHead(savedIcon, appTitle || 'App', window.location.href);
+
+      document.getElementById('builder-screen').style.display = 'none';
+      document.getElementById('launcher-screen').style.display = 'flex';
+      document.getElementById('launch-msg').textContent = (appTitle || 'アプリ') + ' を起動中...';
+
+      setTimeout(() => {
+        window.location.replace(targetUrl);
+      }, 300);
+    } else {
+      drawIcon();
+    }
+  });
+
+  function switchTab(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-' + mode).classList.add('active');
+    drawIcon();
+  }
+
+  nameInput.addEventListener('input', () => {
+    document.getElementById('preview-name').textContent = nameInput.value || 'マイアプリ';
+  });
+  emojiInput.addEventListener('input', drawIcon);
+  colorInput.addEventListener('input', drawIcon);
+
+  imgInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        uploadedImg = img;
+        drawIcon();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function drawIcon() {
+    ctx.clearRect(0, 0, 512, 512);
+    if (currentMode === 'image' && uploadedImg) {
+      // 正方形に中央トリミングして描画
+      const size = Math.min(uploadedImg.width, uploadedImg.height);
+      const sx = (uploadedImg.width - size) / 2;
+      const sy = (uploadedImg.height - size) / 2;
+      ctx.drawImage(uploadedImg, sx, sy, size, size, 0, 0, 512, 512);
+    } else {
+      // 背景色＋絵文字（またはデフォルトアイコン）
+      ctx.fillStyle = currentMode === 'emoji' ? colorInput.value : '#2a2f38';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.font = '260px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const char = currentMode === 'emoji' ? (emojiInput.value || '🚗') : '📱';
+      ctx.fillText(char, 256, 275);
+    }
+  }
+
+  function applyIconToHead(dataUrl, title, startUrl) {
+    document.getElementById('page-title').textContent = title;
+    document.getElementById('dynamic-icon').href = dataUrl;
+    document.getElementById('dynamic-apple-icon').href = dataUrl;
+
+    // 動的PWAマニフェストを生成（これでChromeバッジが消えて本格アプリ化する）
+    const manifest = {
+      name: title,
+      short_name: title,
+      start_url: startUrl,
+      display: "standalone",
+      background_color: "#121417",
+      theme_color: "#121417",
+      icons: [{
+        src: dataUrl,
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any maskable"
+      }]
+    };
+    const stringManifest = JSON.stringify(manifest);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    document.getElementById('dynamic-manifest').href = manifestURL;
+  }
+
+  function prepareShortcut() {
+    const title = nameInput.value.trim() || 'マイアプリ';
+    const targetUrl = urlInput.value.trim();
+
+    if (!targetUrl) {
+      alert('開きたいURLを入力してね！');
+      return;
+    }
+
+    drawIcon();
+    const iconDataUrl = canvas.toDataURL('image/png');
+
+    // ジャンプ先URLをパラメータに仕込んだ自分自身のURLを作る
+    const baseUrl = window.location.href.split('?')[0];
+    const launcherUrl = `${baseUrl}?go=${encodeURIComponent(targetUrl)}&title=${encodeURIComponent(title)}`;
+
+    // 履歴書き換え＆アイコン適用
+    window.history.replaceState({}, title, launcherUrl);
+    try { localStorage.setItem('icon_' + targetUrl, iconDataUrl); } catch(e) {}
+    applyIconToHead(iconDataUrl, title, launcherUrl);
+
+    // ガイド表示
+    const guide = document.getElementById('guide-box');
+    guide.style.display = 'block';
+    guide.scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
+

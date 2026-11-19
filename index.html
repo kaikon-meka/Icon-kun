@@ -6,7 +6,6 @@
   <title id="page-title">カスタムアイコンメーカー</title>
   <link id="dynamic-icon" rel="icon" type="image/png" href="">
   <link id="dynamic-apple-icon" rel="apple-touch-icon" href="">
-  <link id="dynamic-manifest" rel="manifest" href="">
   <style>
     :root {
       --bg: #121417;
@@ -15,6 +14,7 @@
       --text: #f0f4f8;
       --sub: #94a3b8;
       --border: #2e343d;
+      --danger: #ef4444;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg); color: var(--text); padding: 20px 16px 60px; line-height: 1.5; }
@@ -66,6 +66,35 @@
     .guide-box h3 { color: var(--accent); font-size: 1rem; margin-bottom: 8px; }
     .guide-box ol { padding-left: 20px; }
     .guide-box li { margin-bottom: 6px; }
+
+    /* 履歴・バックアップエリア */
+    .section-title { font-size: 1rem; font-weight: 800; color: #fff; margin: 24px 0 10px; display: flex; align-items: center; justify-content: space-between; }
+    .backup-controls { display: flex; gap: 8px; margin-bottom: 14px; }
+    .btn-sub {
+      flex: 1; padding: 10px 8px; border-radius: 10px; border: 1px solid var(--border);
+      background: #262b33; color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center;
+    }
+    .btn-sub:active { opacity: 0.8; }
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .history-item {
+      display: flex; align-items: center; gap: 12px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+    }
+    .history-item img { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: #0f1115; }
+    .history-info { flex: 1; min-width: 0; }
+    .history-title { font-weight: 700; font-size: 0.9rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-url { font-size: 0.75rem; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-restore {
+      padding: 8px 10px; border-radius: 8px; border: none; background: var(--accent);
+      color: #000; font-weight: 800; font-size: 0.78rem; cursor: pointer;
+    }
+    .btn-del {
+      padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: #0f1115; color: var(--danger); font-weight: 700; font-size: 0.78rem; cursor: pointer;
+    }
+    .empty-msg { text-align: center; color: var(--sub); font-size: 0.85rem; padding: 20px; background: var(--card); border-radius: 12px; border: 1px dashed var(--border); }
+
     /* リダイレクト実行中の画面 */
     #launcher-screen {
       display: none; position: fixed; inset: 0; background: var(--bg);
@@ -108,8 +137,8 @@
 
       <label>3. アイコンのデザインを選ぶ</label>
       <div class="tabs">
-        <button type="button" class="tab-btn active" onclick="switchTab('image')">🖼️ 写真・画像から</button>
-        <button type="button" class="tab-btn" onclick="switchTab('emoji')">😀 絵文字＋背景色</button>
+        <button type="button" class="tab-btn active" onclick="switchTab('image', this)">🖼️ 写真・画像から</button>
+        <button type="button" class="tab-btn" onclick="switchTab('emoji', this)">😀 絵文字＋背景色</button>
       </div>
 
       <div id="panel-image" class="panel active">
@@ -138,10 +167,22 @@
       <ol>
         <li>画面右上の <strong>「︙」（メニュー）</strong> をタップ</li>
         <li><strong>「ホーム画面に追加」</strong> をタップ</li>
-        <li>プレビューに<strong>今作ったアイコン</strong>が出ていれば成功！そのまま「追加」を押してね！</li>
+        <li><strong>「ショートカットを作成」</strong> を選ぶと、作ったアイコンがホーム画面に追加されるよ！</li>
       </ol>
-      <p style="font-size:0.8rem; color:var(--sub); margin-top:8px;">※追加したアイコンをタップすると、指定したURLへ自動でジャンプします！</p>
+      <p style="font-size:0.8rem; color:var(--sub); margin-top:8px;">※自動で下の「作成履歴・バックアップ」にも保存されました！</p>
     </div>
+
+    <!-- 作成履歴＆バックアップ管理エリア -->
+    <div class="section-title">
+      <span>📦 作成履歴・バックアップ</span>
+    </div>
+    <div class="backup-controls">
+      <button type="button" class="btn-sub" onclick="exportBackup()">💾 ファイルに保存</button>
+      <label class="btn-sub" for="import-file" style="margin-bottom:0;">📂 ファイルから復元</label>
+      <input type="file" id="import-file" accept=".json" onchange="importBackup(event)">
+    </div>
+
+    <div id="history-list" class="history-list"></div>
   </div>
 
 <script>
@@ -155,18 +196,18 @@
 
   let currentMode = 'image';
   let uploadedImg = null;
+  const STORAGE_KEY = 'icon_maker_backups_v1';
 
-  // 起動時にURLパラメータをチェック（ショートカットからの起動判定）
+  // 起動時にURLパラメータをチェック
   window.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const targetUrl = params.get('go');
     const appTitle = params.get('title');
 
     if (targetUrl) {
-      // ショートカットから起動された場合：タイトルとアイコンを復元しつつ即ジャンプ！
       if (appTitle) document.title = appTitle;
       const savedIcon = localStorage.getItem('icon_' + targetUrl);
-      if (savedIcon) applyIconToHead(savedIcon, appTitle || 'App', window.location.href);
+      if (savedIcon) applyIconToHead(savedIcon, appTitle || 'App');
 
       document.getElementById('builder-screen').style.display = 'none';
       document.getElementById('launcher-screen').style.display = 'flex';
@@ -177,14 +218,15 @@
       }, 300);
     } else {
       drawIcon();
+      renderHistory();
     }
   });
 
-  function switchTab(mode) {
+  function switchTab(mode, btn) {
     currentMode = mode;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    event.target.classList.add('active');
+    if (btn) btn.classList.add('active');
     document.getElementById('panel-' + mode).classList.add('active');
     drawIcon();
   }
@@ -213,13 +255,11 @@
   function drawIcon() {
     ctx.clearRect(0, 0, 512, 512);
     if (currentMode === 'image' && uploadedImg) {
-      // 正方形に中央トリミングして描画
       const size = Math.min(uploadedImg.width, uploadedImg.height);
       const sx = (uploadedImg.width - size) / 2;
       const sy = (uploadedImg.height - size) / 2;
       ctx.drawImage(uploadedImg, sx, sy, size, size, 0, 0, 512, 512);
     } else {
-      // 背景色＋絵文字（またはデフォルトアイコン）
       ctx.fillStyle = currentMode === 'emoji' ? colorInput.value : '#2a2f38';
       ctx.fillRect(0, 0, 512, 512);
       ctx.font = '260px sans-serif';
@@ -230,57 +270,166 @@
     }
   }
 
-  function applyIconToHead(dataUrl, title, startUrl) {
+  // 安全仕様：動的manifestは生成せず、標準のショートカットアイコンのみセットする
+  function applyIconToHead(dataUrl, title) {
     document.getElementById('page-title').textContent = title;
     document.getElementById('dynamic-icon').href = dataUrl;
     document.getElementById('dynamic-apple-icon').href = dataUrl;
-
-    // 動的PWAマニフェストを生成（これでChromeバッジが消えて本格アプリ化する）
-    const manifest = {
-      name: title,
-      short_name: title,
-      start_url: startUrl,
-      display: "standalone",
-      background_color: "#121417",
-      theme_color: "#121417",
-      icons: [{
-        src: dataUrl,
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "any maskable"
-      }]
-    };
-    const stringManifest = JSON.stringify(manifest);
-    const blob = new Blob([stringManifest], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(blob);
-    document.getElementById('dynamic-manifest').href = manifestURL;
   }
 
-  function prepareShortcut() {
-    const title = nameInput.value.trim() || 'マイアプリ';
-    const targetUrl = urlInput.value.trim();
+  function prepareShortcut(overrideData = null) {
+    const title = overrideData ? overrideData.title : (nameInput.value.trim() || 'マイアプリ');
+    const targetUrl = overrideData ? overrideData.url : urlInput.value.trim();
 
     if (!targetUrl) {
       alert('開きたいURLを入力してね！');
       return;
     }
 
-    drawIcon();
-    const iconDataUrl = canvas.toDataURL('image/png');
+    let iconDataUrl;
+    if (overrideData) {
+      iconDataUrl = overrideData.icon;
+      nameInput.value = title;
+      urlInput.value = targetUrl;
+      document.getElementById('preview-name').textContent = title;
+      const img = new Image();
+      img.onload = () => {
+        uploadedImg = img;
+        switchTab('image', document.querySelectorAll('.tab-btn')[0]);
+      };
+      img.src = iconDataUrl;
+    } else {
+      drawIcon();
+      // データ容量を軽くするため圧縮率を調整したPNG/JPEGまたは縮小サイズで保存
+      iconDataUrl = canvas.toDataURL('image/png');
+      saveToHistory(title, targetUrl, iconDataUrl);
+    }
 
-    // ジャンプ先URLをパラメータに仕込んだ自分自身のURLを作る
     const baseUrl = window.location.href.split('?')[0];
     const launcherUrl = `${baseUrl}?go=${encodeURIComponent(targetUrl)}&title=${encodeURIComponent(title)}`;
 
-    // 履歴書き換え＆アイコン適用
     window.history.replaceState({}, title, launcherUrl);
     try { localStorage.setItem('icon_' + targetUrl, iconDataUrl); } catch(e) {}
-    applyIconToHead(iconDataUrl, title, launcherUrl);
+    applyIconToHead(iconDataUrl, title);
 
-    // ガイド表示
     const guide = document.getElementById('guide-box');
     guide.style.display = 'block';
     guide.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // 履歴に自動保存
+  function saveToHistory(title, url, iconDataUrl) {
+    try {
+      // 容量節約のため256x256にリサイズして保存
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 256;
+      tempCanvas.height = 256;
+      tempCanvas.getContext('2d').drawImage(canvas, 0, 0, 256, 256);
+      const compactIcon = tempCanvas.toDataURL('image/png');
+
+      let list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      // 同じURLがあれば上書き更新
+      list = list.filter(item => item.url !== url);
+      list.unshift({
+        id: Date.now(),
+        title: title,
+        url: url,
+        icon: compactIcon,
+        updatedAt: new Date().toLocaleDateString('ja-JP')
+      });
+      // 最大30件まで保持
+      if (list.length > 30) list = list.slice(0, 30);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      renderHistory();
+    } catch (e) {
+      console.warn('履歴の保存容量上限に達しました', e);
+    }
+  }
+
+  // 履歴一覧の描画
+  function renderHistory() {
+    const container = document.getElementById('history-list');
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty-msg">まだ作成履歴がありません。<br>上でアイコンを作るとここに自動保存されます！</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    list.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `
+        <img src="${item.icon}" alt="">
+        <div class="history-info">
+          <div class="history-title">${escapeHtml(item.title)}</div>
+          <div class="history-url">${escapeHtml(item.url)}</div>
+        </div>
+        <div class="history-actions">
+          <button type="button" class="btn-restore" onclick="restoreItem(${item.id})">🔄 復元</button>
+          <button type="button" class="btn-del" onclick="deleteItem(${item.id})">削除</button>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function restoreItem(id) {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const target = list.find(item => item.id === id);
+    if (target) {
+      prepareShortcut(target);
+    }
+  }
+
+  function deleteItem(id) {
+    if (!confirm('この履歴を削除しますか？')) return;
+    let list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    list = list.filter(item => item.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    renderHistory();
+  }
+
+  // バックアップファイルの書き出し（ダウンロード）
+  function exportBackup() {
+    const data = localStorage.getItem(STORAGE_KEY) || '[]';
+    if (data === '[]') {
+      alert('保存する履歴データがまだありません！');
+      return;
+    }
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `icon_backup_${dateStr}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // バックアップファイルの読み込み（復元）
+  function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (!Array.isArray(imported)) throw new Error('形式エラー');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+        renderHistory();
+        alert(`✅ ${imported.length}件のアイコンデータを復元しました！`);
+      } catch (err) {
+        alert('❌ バックアップファイルの読み込みに失敗しました。正しいJSONファイルか確認してね。');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   }
 </script>
 </body>

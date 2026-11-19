@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#121417">
   <title id="page-title">カスタムアイコンメーカー</title>
+
   <link id="dynamic-icon" rel="icon" type="image/png" href="">
   <link id="dynamic-apple-icon" rel="apple-touch-icon" href="">
+  <link id="dynamic-manifest" rel="manifest" href="">
+
   <style>
     :root {
       --bg: #121417;
@@ -14,424 +18,1312 @@
       --text: #f0f4f8;
       --sub: #94a3b8;
       --border: #2e343d;
-      --danger: #ef4444;
+      --danger: #ff6677;
+      --success: #36d399;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 20px 16px 60px; line-height: 1.5; }
-    .container { max-width: 480px; margin: 0 auto; }
-    h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; color: var(--accent); letter-spacing: 0.03em; }
-    .desc { font-size: 0.85rem; color: var(--sub); margin-bottom: 20px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
-    label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; color: #cbd5e1; }
-    input[type="text"], input[type="url"] {
-      width: 100%; background: #0f1115; border: 1px solid var(--border); color: var(--text);
-      padding: 12px; border-radius: 10px; font-size: 0.95rem; margin-bottom: 14px; outline: none;
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    input:focus { border-color: var(--accent); }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px 16px 60px;
+      line-height: 1.5;
+    }
+
+    button, input, textarea {
+      font: inherit;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: var(--accent);
+      letter-spacing: 0.03em;
+    }
+
+    h2 {
+      font-size: 1.05rem;
+      margin-bottom: 12px;
+    }
+
+    .desc {
+      font-size: 0.85rem;
+      color: var(--sub);
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+
+    input[type="text"],
+    input[type="url"] {
+      width: 100%;
+      background: #0f1115;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+    }
+
     .preview-area {
-      display: flex; align-items: center; gap: 16px; background: #0f1115;
-      padding: 14px; border-radius: 12px; margin-bottom: 16px; border: 1px dashed var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: #0f1115;
+      padding: 14px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      border: 1px dashed var(--border);
     }
+
     #preview-canvas {
-      width: 72px; height: 72px; border-radius: 18px; background: #2a2f38;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4); flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: #2a2f38;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      flex-shrink: 0;
     }
-    .preview-info { font-size: 0.85rem; }
-    .preview-info strong { display: block; font-size: 1rem; color: #fff; margin-bottom: 2px; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+
+    .preview-info {
+      font-size: 0.85rem;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .preview-info strong {
+      display: block;
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
     .tab-btn {
-      flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
-      background: #0f1115; color: var(--sub); font-weight: 700; font-size: 0.85rem; cursor: pointer;
+      flex: 1;
+      padding: 10px 6px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0f1115;
+      color: var(--sub);
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
     }
-    .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-    .panel { display: none; }
-    .panel.active { display: block; }
-    .row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
-    input[type="color"] { width: 48px; height: 42px; border: none; border-radius: 8px; background: none; cursor: pointer; }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    input[type="color"] {
+      width: 48px;
+      height: 42px;
+      border: none;
+      border-radius: 8px;
+      background: none;
+      cursor: pointer;
+    }
+
     .file-label {
-      display: block; text-align: center; padding: 14px; background: #262b33;
-      border: 1px dashed var(--accent); border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--accent);
+      display: block;
+      text-align: center;
+      padding: 14px;
+      background: #262b33;
+      border: 1px dashed var(--accent);
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--accent);
     }
-    input[type="file"] { display: none; }
+
+    input[type="file"] {
+      display: none;
+    }
+
     .btn-primary {
-      width: 100%; padding: 15px; border: none; border-radius: 12px;
-      background: linear-gradient(135deg, #00d2ff, #0080ff); color: #000;
-      font-size: 1rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(0,210,255,0.3);
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #00d2ff, #0080ff);
+      color: #000;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,210,255,0.3);
     }
-    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #292f38;
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      color: var(--danger);
+      border-color: #743743;
+    }
+
     .guide-box {
-      display: none; background: rgba(0, 210, 255, 0.1); border: 1px solid var(--accent);
-      border-radius: 12px; padding: 16px; margin-top: 16px; font-size: 0.9rem;
+      display: none;
+      background: rgba(0, 210, 255, 0.1);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
     }
-    .guide-box h3 { color: var(--accent); font-size: 1rem; margin-bottom: 8px; }
-    .guide-box ol { padding-left: 20px; }
-    .guide-box li { margin-bottom: 6px; }
 
-    /* 履歴・バックアップエリア */
-    .section-title { font-size: 1rem; font-weight: 800; color: #fff; margin: 24px 0 10px; display: flex; align-items: center; justify-content: space-between; }
-    .backup-controls { display: flex; gap: 8px; margin-bottom: 14px; }
-    .btn-sub {
-      flex: 1; padding: 10px 8px; border-radius: 10px; border: 1px solid var(--border);
-      background: #262b33; color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center;
+    .guide-box h3 {
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 8px;
     }
-    .btn-sub:active { opacity: 0.8; }
-    .history-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .guide-box ol {
+      padding-left: 20px;
+    }
+
+    .guide-box li {
+      margin-bottom: 6px;
+    }
+
+    .guide-url {
+      display: block;
+      margin-top: 10px;
+      padding: 10px;
+      background: #0f1115;
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 0.75rem;
+      overflow-wrap: anywhere;
+      user-select: text;
+    }
+
+    .small-note {
+      font-size: 0.78rem;
+      color: var(--sub);
+      margin-top: 9px;
+    }
+
     .history-item {
-      display: flex; align-items: center; gap: 12px; background: var(--card);
-      border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
     }
-    .history-item img { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: #0f1115; }
-    .history-info { flex: 1; min-width: 0; }
-    .history-title { font-weight: 700; font-size: 0.9rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-url { font-size: 0.75rem; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-actions { display: flex; gap: 6px; flex-shrink: 0; }
-    .btn-restore {
-      padding: 8px 10px; border-radius: 8px; border: none; background: var(--accent);
-      color: #000; font-weight: 800; font-size: 0.78rem; cursor: pointer;
-    }
-    .btn-del {
-      padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
-      background: #0f1115; color: var(--danger); font-weight: 700; font-size: 0.78rem; cursor: pointer;
-    }
-    .empty-msg { text-align: center; color: var(--sub); font-size: 0.85rem; padding: 20px; background: var(--card); border-radius: 12px; border: 1px dashed var(--border); }
 
-    /* リダイレクト実行中の画面 */
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-icon {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 12px;
+      flex-shrink: 0;
+      background: #0f1115;
+    }
+
+    .history-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-info strong {
+      display: block;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+
+    .history-info small {
+      display: block;
+      color: var(--sub);
+      font-size: 0.7rem;
+      overflow-wrap: anywhere;
+    }
+
+    .history-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .history-actions button {
+      padding: 6px 9px;
+      font-size: 0.72rem;
+    }
+
+    .empty-history {
+      color: var(--sub);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 18px 0;
+    }
+
+    .backup-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .backup-actions button {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .status-message {
+      font-size: 0.82rem;
+      margin-top: 10px;
+      color: var(--success);
+      overflow-wrap: anywhere;
+    }
+
     #launcher-screen {
-      display: none; position: fixed; inset: 0; background: var(--bg);
-      flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 9999;
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      z-index: 9999;
     }
+
     .spinner {
-      width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--accent);
-      border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .muted {
+      color: var(--sub);
+      font-size: 0.78rem;
+    }
   </style>
 </head>
+
 <body>
 
-  <!-- アイコンから起動した時の自動転送画面 -->
   <div id="launcher-screen">
     <div class="spinner"></div>
-    <p id="launch-msg" style="font-weight:700; font-size:1.1rem;">アプリを起動中...</p>
+    <p id="launch-msg" style="font-weight:700;font-size:1.1rem;">
+      アプリを起動中...
+    </p>
+    <p class="muted" style="margin-top:8px;">
+      しばらくお待ちください
+    </p>
   </div>
 
-  <!-- 設定・作成画面 -->
   <div class="container" id="builder-screen">
+
     <h1>🛠️ カスタムアイコンメーカー</h1>
-    <p class="desc">好きな画像や絵文字で、WEBアプリのホーム画面アイコンを量産！</p>
+    <p class="desc">
+      好きな画像や絵文字で、WEBアプリのホーム画面アイコンを作ろう！
+    </p>
 
     <div class="card">
+
       <div class="preview-area">
         <canvas id="preview-canvas" width="512" height="512"></canvas>
         <div class="preview-info">
           <strong id="preview-name">マイアプリ</strong>
-          <span style="color:var(--sub); font-size:0.8rem;">ホーム画面の表示イメージ</span>
+          <span style="color:var(--sub);font-size:0.8rem;">
+            ホーム画面の表示イメージ
+          </span>
         </div>
       </div>
 
-      <label>1. アプリの名前（ホーム画面に出る文字）</label>
-      <input type="text" id="app-name" placeholder="例：GPS自動停止版" value="マイアプリ">
+      <label for="app-name">1. アプリの名前</label>
+      <input
+        type="text"
+        id="app-name"
+        placeholder="例：GPS自動停止版"
+        value="マイアプリ"
+        maxlength="60"
+      >
 
-      <label>2. 開きたいURL（GitHubやローカルサーバー）</label>
-      <input type="url" id="app-url" placeholder="https://kaikon-meka.github.io/...">
+      <label for="app-url">2. 開きたいURL</label>
+      <input
+        type="url"
+        id="app-url"
+        placeholder="https://kaikon-meka.github.io/..."
+        inputmode="url"
+      >
 
       <label>3. アイコンのデザインを選ぶ</label>
+
       <div class="tabs">
-        <button type="button" class="tab-btn active" onclick="switchTab('image', this)">🖼️ 写真・画像から</button>
-        <button type="button" class="tab-btn" onclick="switchTab('emoji', this)">😀 絵文字＋背景色</button>
+        <button type="button" class="tab-btn active" data-mode="image">
+          🖼️ 写真・画像から
+        </button>
+        <button type="button" class="tab-btn" data-mode="emoji">
+          😀 絵文字＋背景色
+        </button>
       </div>
 
       <div id="panel-image" class="panel active">
-        <label class="file-label" for="img-input">📁 スマホから画像を選ぶ</label>
+        <label class="file-label" for="img-input">
+          📁 スマホから画像を選ぶ
+        </label>
         <input type="file" id="img-input" accept="image/*">
+        <p class="small-note" id="image-status">
+          画像を選択するとプレビューに反映されます。
+        </p>
       </div>
 
       <div id="panel-emoji" class="panel">
         <div class="row">
           <div style="flex:1;">
             <label style="font-size:0.75rem;">好きな絵文字</label>
-            <input type="text" id="emoji-char" value="🚗" maxlength="4" style="margin-bottom:0; text-align:center; font-size:1.4rem;">
+            <input
+              type="text"
+              id="emoji-char"
+              value="🚗"
+              maxlength="8"
+              style="margin-bottom:0;text-align:center;font-size:1.4rem;"
+            >
           </div>
+
           <div>
             <label style="font-size:0.75rem;">背景色</label>
             <input type="color" id="bg-color" value="#1e293b">
           </div>
         </div>
       </div>
+
     </div>
 
-    <button type="button" class="btn-primary" onclick="prepareShortcut()">✨ このアイコンで準備する！</button>
+    <button type="button" class="btn-primary" id="prepare-button">
+      ✨ このアイコンで準備する！
+    </button>
 
     <div class="guide-box" id="guide-box">
       <h3>✅ 準備完了！あと1ステップ！</h3>
+
       <ol>
-        <li>画面右上の <strong>「︙」（メニュー）</strong> をタップ</li>
-        <li><strong>「ホーム画面に追加」</strong> をタップ</li>
-        <li><strong>「ショートカットを作成」</strong> を選ぶと、作ったアイコンがホーム画面に追加されるよ！</li>
+        <li>画面右上の「︙」（Chromeメニュー）をタップ</li>
+        <li>「ホーム画面に追加」をタップ</li>
+        <li>今作ったアイコンが表示されていることを確認して追加</li>
       </ol>
-      <p style="font-size:0.8rem; color:var(--sub); margin-top:8px;">※自動で下の「作成履歴・バックアップ」にも保存されました！</p>
+
+      <p class="small-note">
+        追加したアイコンをタップすると、指定したURLへ自動で移動します。
+      </p>
+
+      <div class="guide-url" id="launcher-url-display"></div>
+      <p class="small-note">
+        ※このURLがショートカットの起動先になります。
+      </p>
     </div>
 
-    <!-- 作成履歴＆バックアップ管理エリア -->
-    <div class="section-title">
-      <span>📦 作成履歴・バックアップ</span>
-    </div>
-    <div class="backup-controls">
-      <button type="button" class="btn-sub" onclick="exportBackup()">💾 ファイルに保存</button>
-      <label class="btn-sub" for="import-file" style="margin-bottom:0;">📂 ファイルから復元</label>
-      <input type="file" id="import-file" accept=".json" onchange="importBackup(event)">
+    <div class="card" style="margin-top:20px;">
+      <h2>📚 作成履歴</h2>
+      <div id="history-list"></div>
     </div>
 
-    <div id="history-list" class="history-list"></div>
+    <div class="card">
+      <h2>💾 バックアップ</h2>
+      <p class="small-note" style="margin:0 0 12px;">
+        作成履歴をJSONファイルとして保存・復元できます。
+      </p>
+
+      <div class="backup-actions">
+        <button type="button" class="btn-secondary" id="export-button">
+          📤 書き出し
+        </button>
+
+        <button type="button" class="btn-secondary" id="import-button">
+          📥 読み込み
+        </button>
+      </div>
+
+      <input
+        type="file"
+        id="backup-input"
+        accept=".json,application/json"
+      >
+
+      <p id="backup-status" class="status-message"></p>
+    </div>
+
   </div>
 
 <script>
-  const canvas = document.getElementById('preview-canvas');
-  const ctx = canvas.getContext('2d');
-  const nameInput = document.getElementById('app-name');
-  const urlInput = document.getElementById('app-url');
-  const emojiInput = document.getElementById('emoji-char');
-  const colorInput = document.getElementById('bg-color');
-  const imgInput = document.getElementById('img-input');
+(() => {
+  "use strict";
 
-  let currentMode = 'image';
+  // ----------------------------------------
+  // 基本設定
+  // ----------------------------------------
+
+  const STORAGE_KEY = "icon_maker_backups_v1";
+  const MAX_HISTORY = 30;
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+  const MAX_BACKUP_SIZE = 20 * 1024 * 1024;
+  const MAX_HISTORY_ICON_LENGTH = 2 * 1024 * 1024;
+
+  const canvas = document.getElementById("preview-canvas");
+  const ctx = canvas.getContext("2d");
+
+  const nameInput = document.getElementById("app-name");
+  const urlInput = document.getElementById("app-url");
+  const emojiInput = document.getElementById("emoji-char");
+  const colorInput = document.getElementById("bg-color");
+  const imgInput = document.getElementById("img-input");
+
+  const builderScreen = document.getElementById("builder-screen");
+  const launcherScreen = document.getElementById("launcher-screen");
+  const guideBox = document.getElementById("guide-box");
+
+  let currentMode = "image";
   let uploadedImg = null;
-  const STORAGE_KEY = 'icon_maker_backups_v1';
+  let currentImageUrl = "";
+  let manifestObjectUrl = null;
 
-  // 起動時にURLパラメータをチェック
-  window.addEventListener('DOMContentLoaded', () => {
+  // ----------------------------------------
+  // URLの安全確認
+  // ----------------------------------------
+
+  function validateUrl(value) {
+    try {
+      const url = new URL(value);
+
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        return null;
+      }
+
+      if (!url.hostname) {
+        return null;
+      }
+
+      return url.href;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // ----------------------------------------
+  // 起動用URLを作る
+  // ----------------------------------------
+
+  function createLauncherUrl(targetUrl, title) {
+    const baseUrl =
+      window.location.origin + window.location.pathname;
+
+    const launcher = new URL(baseUrl);
+
+    launcher.searchParams.set("go", targetUrl);
+    launcher.searchParams.set("title", title);
+
+    return launcher.href;
+  }
+
+  // ----------------------------------------
+  // 動的Manifest・アイコン設定
+  // 旧バージョンの重要な仕組みを復活
+  // ----------------------------------------
+
+  function applyIconToHead(dataUrl, title, startUrl) {
+    document.title = title;
+
+    document.getElementById("page-title").textContent = title;
+
+    document.getElementById("dynamic-icon").href = dataUrl;
+
+    document.getElementById("dynamic-apple-icon").href = dataUrl;
+
+    const baseUrl =
+      window.location.origin + window.location.pathname;
+
+    const scopeUrl = new URL(".", baseUrl).href;
+
+    const manifest = {
+      id: startUrl,
+      name: title,
+      short_name: title.slice(0, 20),
+      start_url: startUrl,
+      scope: scopeUrl,
+      display: "standalone",
+      background_color: "#121417",
+      theme_color: "#121417",
+      icons: [
+        {
+          src: dataUrl,
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any maskable"
+        }
+      ]
+    };
+
+    const manifestBlob = new Blob(
+      [JSON.stringify(manifest)],
+      { type: "application/manifest+json" }
+    );
+
+    const newManifestUrl = URL.createObjectURL(manifestBlob);
+
+    document.getElementById("dynamic-manifest").href =
+      newManifestUrl;
+
+    // 古いManifestは新しいManifestに切り替えてから解放
+    if (manifestObjectUrl) {
+      URL.revokeObjectURL(manifestObjectUrl);
+    }
+
+    manifestObjectUrl = newManifestUrl;
+  }
+
+  // ----------------------------------------
+  // ショートカット起動処理
+  // ----------------------------------------
+
+  function launchApp(targetUrl, appTitle) {
+    const validUrl = validateUrl(targetUrl);
+
+    if (!validUrl) {
+      document.getElementById("launch-msg").textContent =
+        "転送先URLが正しくありません。";
+
+      return;
+    }
+
+    const title = (appTitle || "アプリ").slice(0, 60);
+
+    document.title = title;
+
+    const savedIcon = localStorage.getItem("icon_" + validUrl);
+
+    if (savedIcon && savedIcon.startsWith("data:image/png;base64,")) {
+      document.getElementById("dynamic-icon").href = savedIcon;
+      document.getElementById("dynamic-apple-icon").href = savedIcon;
+    }
+
+    builderScreen.style.display = "none";
+    launcherScreen.style.display = "flex";
+
+    document.getElementById("launch-msg").textContent =
+      title + " を起動中...";
+
+    // 転送先を確認したうえで移動
+    setTimeout(() => {
+      window.location.replace(validUrl);
+    }, 300);
+  }
+
+  // ----------------------------------------
+  // 起動時のURLチェック
+  // ----------------------------------------
+
+  function checkLaunchRequest() {
     const params = new URLSearchParams(window.location.search);
-    const targetUrl = params.get('go');
-    const appTitle = params.get('title');
+
+    const targetUrl = params.get("go");
+    const appTitle = params.get("title");
 
     if (targetUrl) {
-      if (appTitle) document.title = appTitle;
-      const savedIcon = localStorage.getItem('icon_' + targetUrl);
-      if (savedIcon) applyIconToHead(savedIcon, appTitle || 'App');
-
-      document.getElementById('builder-screen').style.display = 'none';
-      document.getElementById('launcher-screen').style.display = 'flex';
-      document.getElementById('launch-msg').textContent = (appTitle || 'アプリ') + ' を起動中...';
-
-      setTimeout(() => {
-        window.location.replace(targetUrl);
-      }, 300);
-    } else {
-      drawIcon();
-      renderHistory();
+      launchApp(targetUrl, appTitle);
+      return true;
     }
-  });
 
-  function switchTab(mode, btn) {
+    drawIcon();
+    renderHistory();
+
+    return false;
+  }
+
+  // ----------------------------------------
+  // タブ切り替え
+  // ----------------------------------------
+
+  function switchTab(mode) {
     currentMode = mode;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    document.getElementById('panel-' + mode).classList.add('active');
+
+    document.querySelectorAll(".tab-btn").forEach(button => {
+      button.classList.toggle(
+        "active",
+        button.dataset.mode === mode
+      );
+    });
+
+    document.querySelectorAll(".panel").forEach(panel => {
+      panel.classList.toggle(
+        "active",
+        panel.id === "panel-" + mode
+      );
+    });
+
     drawIcon();
   }
 
-  nameInput.addEventListener('input', () => {
-    document.getElementById('preview-name').textContent = nameInput.value || 'マイアプリ';
+  document.querySelectorAll(".tab-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      switchTab(button.dataset.mode);
+    });
   });
-  emojiInput.addEventListener('input', drawIcon);
-  colorInput.addEventListener('input', drawIcon);
 
-  imgInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        uploadedImg = img;
-        drawIcon();
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+  // ----------------------------------------
+  // アイコン描画
+  // ----------------------------------------
 
   function drawIcon() {
     ctx.clearRect(0, 0, 512, 512);
-    if (currentMode === 'image' && uploadedImg) {
-      const size = Math.min(uploadedImg.width, uploadedImg.height);
+
+    if (currentMode === "image" && uploadedImg) {
+      const size = Math.min(
+        uploadedImg.width,
+        uploadedImg.height
+      );
+
       const sx = (uploadedImg.width - size) / 2;
       const sy = (uploadedImg.height - size) / 2;
-      ctx.drawImage(uploadedImg, sx, sy, size, size, 0, 0, 512, 512);
+
+      ctx.drawImage(
+        uploadedImg,
+        sx,
+        sy,
+        size,
+        size,
+        0,
+        0,
+        512,
+        512
+      );
+
     } else {
-      ctx.fillStyle = currentMode === 'emoji' ? colorInput.value : '#2a2f38';
+      ctx.fillStyle =
+        currentMode === "emoji"
+          ? colorInput.value
+          : "#2a2f38";
+
       ctx.fillRect(0, 0, 512, 512);
-      ctx.font = '260px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const char = currentMode === 'emoji' ? (emojiInput.value || '🚗') : '📱';
-      ctx.fillText(char, 256, 275);
+
+      ctx.font = "260px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      const character =
+        currentMode === "emoji"
+          ? (emojiInput.value || "🚗")
+          : "📱";
+
+      ctx.fillText(character, 256, 275);
     }
   }
 
-  // 安全仕様：動的manifestは生成せず、標準のショートカットアイコンのみセットする
-  function applyIconToHead(dataUrl, title) {
-    document.getElementById('page-title').textContent = title;
-    document.getElementById('dynamic-icon').href = dataUrl;
-    document.getElementById('dynamic-apple-icon').href = dataUrl;
-  }
+  // ----------------------------------------
+  // 入力変更
+  // ----------------------------------------
 
-  function prepareShortcut(overrideData = null) {
-    const title = overrideData ? overrideData.title : (nameInput.value.trim() || 'マイアプリ');
-    const targetUrl = overrideData ? overrideData.url : urlInput.value.trim();
+  nameInput.addEventListener("input", () => {
+    document.getElementById("preview-name").textContent =
+      nameInput.value || "マイアプリ";
+  });
 
-    if (!targetUrl) {
-      alert('開きたいURLを入力してね！');
+  emojiInput.addEventListener("input", drawIcon);
+  colorInput.addEventListener("input", drawIcon);
+
+  // ----------------------------------------
+  // 画像読み込み
+  // ----------------------------------------
+
+  imgInput.addEventListener("change", event => {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("画像ファイルを選択してください。");
+      imgInput.value = "";
       return;
     }
 
-    let iconDataUrl;
-    if (overrideData) {
-      iconDataUrl = overrideData.icon;
-      nameInput.value = title;
-      urlInput.value = targetUrl;
-      document.getElementById('preview-name').textContent = title;
-      const img = new Image();
-      img.onload = () => {
-        uploadedImg = img;
-        switchTab('image', document.querySelectorAll('.tab-btn')[0]);
+    if (file.size > MAX_IMAGE_SIZE) {
+      alert("画像サイズが大きすぎます。10MB以下の画像を選んでください。");
+      imgInput.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = event => {
+      const image = new Image();
+
+      image.onload = () => {
+        uploadedImg = image;
+        currentImageUrl = event.target.result;
+
+        document.getElementById("image-status").textContent =
+          "画像を読み込みました。";
+
+        drawIcon();
       };
-      img.src = iconDataUrl;
-    } else {
-      drawIcon();
-      // データ容量を軽くするため圧縮率を調整したPNG/JPEGまたは縮小サイズで保存
-      iconDataUrl = canvas.toDataURL('image/png');
-      saveToHistory(title, targetUrl, iconDataUrl);
-    }
 
-    const baseUrl = window.location.href.split('?')[0];
-    const launcherUrl = `${baseUrl}?go=${encodeURIComponent(targetUrl)}&title=${encodeURIComponent(title)}`;
+      image.onerror = () => {
+        alert("画像を読み込めませんでした。");
+      };
 
-    window.history.replaceState({}, title, launcherUrl);
-    try { localStorage.setItem('icon_' + targetUrl, iconDataUrl); } catch(e) {}
-    applyIconToHead(iconDataUrl, title);
+      image.src = event.target.result;
+    };
 
-    const guide = document.getElementById('guide-box');
-    guide.style.display = 'block';
-    guide.scrollIntoView({ behavior: 'smooth' });
+    reader.onerror = () => {
+      alert("画像ファイルの読み込みに失敗しました。");
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+  // ----------------------------------------
+  // 履歴アイコンを軽量化
+  // ----------------------------------------
+
+  function createHistoryIcon() {
+    const smallCanvas = document.createElement("canvas");
+
+    smallCanvas.width = 256;
+    smallCanvas.height = 256;
+
+    const smallCtx = smallCanvas.getContext("2d");
+
+    smallCtx.drawImage(canvas, 0, 0, 256, 256);
+
+    return smallCanvas.toDataURL("image/png");
   }
 
-  // 履歴に自動保存
-  function saveToHistory(title, url, iconDataUrl) {
+  // ----------------------------------------
+  // 履歴データ読み込み
+  // ----------------------------------------
+
+  function readHistory() {
     try {
-      // 容量節約のため256x256にリサイズして保存
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = 256;
-      tempCanvas.height = 256;
-      tempCanvas.getContext('2d').drawImage(canvas, 0, 0, 256, 256);
-      const compactIcon = tempCanvas.toDataURL('image/png');
+      const raw = localStorage.getItem(STORAGE_KEY);
 
-      let list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      // 同じURLがあれば上書き更新
-      list = list.filter(item => item.url !== url);
-      list.unshift({
-        id: Date.now(),
-        title: title,
-        url: url,
-        icon: compactIcon,
-        updatedAt: new Date().toLocaleDateString('ja-JP')
-      });
-      // 最大30件まで保持
-      if (list.length > 30) list = list.slice(0, 30);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-      renderHistory();
-    } catch (e) {
-      console.warn('履歴の保存容量上限に達しました', e);
+      if (!raw) return [];
+
+      const data = JSON.parse(raw);
+
+      if (!Array.isArray(data)) return [];
+
+      return data.filter(isValidHistoryItem);
+
+    } catch (error) {
+      console.error("履歴読み込みエラー:", error);
+      return [];
     }
   }
 
-  // 履歴一覧の描画
-  function renderHistory() {
-    const container = document.getElementById('history-list');
-    const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  function isValidHistoryItem(item) {
+    if (!item || typeof item !== "object") return false;
 
-    if (list.length === 0) {
-      container.innerHTML = '<div class="empty-msg">まだ作成履歴がありません。<br>上でアイコンを作るとここに自動保存されます！</div>';
+    if (
+      typeof item.id !== "string" &&
+      typeof item.id !== "number"
+    ) {
+      return false;
+    }
+
+    if (typeof item.title !== "string") return false;
+    if (typeof item.url !== "string") return false;
+    if (typeof item.icon !== "string") return false;
+
+    if (!validateUrl(item.url)) return false;
+
+    if (!item.icon.startsWith("data:image/png;base64,")) {
+      return false;
+    }
+
+    if (item.icon.length > MAX_HISTORY_ICON_LENGTH) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // ----------------------------------------
+  // 履歴保存
+  // ----------------------------------------
+
+  function writeHistory(history) {
+    const limited = history.slice(0, MAX_HISTORY);
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(limited)
+      );
+
+      return true;
+
+    } catch (error) {
+      console.warn("履歴保存容量を超えました。", error);
+
+      // 保存容量不足の場合は古い履歴を減らして再試行
+      for (let count = limited.length - 1; count >= 1; count--) {
+        try {
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(limited.slice(0, count))
+          );
+
+          return true;
+
+        } catch (retryError) {
+          // 次の件数で再試行
+        }
+      }
+
+      return false;
+    }
+  }
+
+  function saveToHistory(title, url, icon) {
+    const history = readHistory();
+
+    const item = {
+      id: String(Date.now()) + "_" + Math.random().toString(36).slice(2, 8),
+      title,
+      url,
+      icon,
+      updatedAt: new Date().toISOString()
+    };
+
+    const updated = [
+      item,
+      ...history.filter(entry => entry.url !== url)
+    ].slice(0, MAX_HISTORY);
+
+    return writeHistory(updated);
+  }
+
+  // ----------------------------------------
+  // 履歴表示
+  // ----------------------------------------
+
+  function renderHistory() {
+    const list = document.getElementById("history-list");
+    const history = readHistory();
+
+    list.replaceChildren();
+
+    if (history.length === 0) {
+      const empty = document.createElement("div");
+
+      empty.className = "empty-history";
+      empty.textContent = "まだ作成履歴はありません。";
+
+      list.appendChild(empty);
       return;
     }
 
-    container.innerHTML = '';
-    list.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      div.innerHTML = `
-        <img src="${item.icon}" alt="">
-        <div class="history-info">
-          <div class="history-title">${escapeHtml(item.title)}</div>
-          <div class="history-url">${escapeHtml(item.url)}</div>
-        </div>
-        <div class="history-actions">
-          <button type="button" class="btn-restore" onclick="restoreItem(${item.id})">🔄 復元</button>
-          <button type="button" class="btn-del" onclick="deleteItem(${item.id})">削除</button>
-        </div>
-      `;
-      container.appendChild(div);
+    history.forEach(item => {
+      const row = document.createElement("div");
+      row.className = "history-item";
+
+      const icon = document.createElement("img");
+      icon.className = "history-icon";
+      icon.src = item.icon;
+      icon.alt = "";
+
+      const info = document.createElement("div");
+      info.className = "history-info";
+
+      const title = document.createElement("strong");
+      title.textContent = item.title;
+
+      const url = document.createElement("small");
+      url.textContent = item.url;
+
+      info.append(title, url);
+
+      const actions = document.createElement("div");
+      actions.className = "history-actions";
+
+      const restoreButton = document.createElement("button");
+      restoreButton.type = "button";
+      restoreButton.className = "btn-secondary";
+      restoreButton.textContent = "復元";
+
+      restoreButton.addEventListener("click", () => {
+        restoreItem(item.id);
+      });
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "btn-secondary btn-danger";
+      deleteButton.textContent = "削除";
+
+      deleteButton.addEventListener("click", () => {
+        deleteItem(item.id);
+      });
+
+      actions.append(restoreButton, deleteButton);
+      row.append(icon, info, actions);
+
+      list.appendChild(row);
     });
   }
 
+  // ----------------------------------------
+  // 履歴復元
+  // ----------------------------------------
+
   function restoreItem(id) {
-    const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const target = list.find(item => item.id === id);
-    if (target) {
-      prepareShortcut(target);
+    const history = readHistory();
+
+    const item = history.find(entry => entry.id === id);
+
+    if (!item) {
+      alert("履歴が見つかりません。");
+      return;
     }
+
+    nameInput.value = item.title;
+    urlInput.value = item.url;
+
+    document.getElementById("preview-name").textContent =
+      item.title;
+
+    const image = new Image();
+
+    image.onload = () => {
+      uploadedImg = image;
+      currentImageUrl = item.icon;
+
+      switchTab("image");
+
+      guideBox.style.display = "none";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+      drawIcon();
+    };
+
+    image.onerror = () => {
+      alert("履歴の画像を読み込めませんでした。");
+    };
+
+    image.src = item.icon;
   }
 
+  // ----------------------------------------
+  // 履歴削除
+  // ----------------------------------------
+
   function deleteItem(id) {
-    if (!confirm('この履歴を削除しますか？')) return;
-    let list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    list = list.filter(item => item.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    if (!confirm("この履歴を削除しますか？")) return;
+
+    const history = readHistory().filter(
+      item => item.id !== id
+    );
+
+    writeHistory(history);
     renderHistory();
   }
 
-  // バックアップファイルの書き出し（ダウンロード）
-  function exportBackup() {
-    const data = localStorage.getItem(STORAGE_KEY) || '[]';
-    if (data === '[]') {
-      alert('保存する履歴データがまだありません！');
+  // ----------------------------------------
+  // ショートカット準備
+  // ----------------------------------------
+
+  function prepareShortcut() {
+    const title =
+      nameInput.value.trim().slice(0, 60) || "マイアプリ";
+
+    const enteredUrl = urlInput.value.trim();
+
+    const targetUrl = validateUrl(enteredUrl);
+
+    if (!enteredUrl) {
+      alert("開きたいURLを入力してください。");
       return;
     }
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const dateStr = new Date().toISOString().slice(0, 10);
-    a.href = url;
-    a.download = `icon_backup_${dateStr}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+
+    if (!targetUrl) {
+      alert("URLが正しくありません。https:// または http:// から始まるURLを入力してください。");
+      return;
+    }
+
+    drawIcon();
+
+    const iconDataUrl = canvas.toDataURL("image/png");
+
+    // 履歴用の軽量画像
+    const historyIcon = createHistoryIcon();
+
+    // ショートカット起動用URL
+    const launcherUrl = createLauncherUrl(
+      targetUrl,
+      title
+    );
+
+    // アイコンを転送先URLと関連付けて保存
+    let cacheSaved = true;
+
+    try {
+      localStorage.setItem(
+        "icon_" + targetUrl,
+        iconDataUrl
+      );
+    } catch (error) {
+      cacheSaved = false;
+      console.warn("アイコンキャッシュ保存失敗:", error);
+    }
+
+    // 履歴保存
+    const historySaved = saveToHistory(
+      title,
+      targetUrl,
+      historyIcon
+    );
+
+    // 重要：ブラウザの現在URLをショートカット用URLに変更
+    window.history.replaceState(
+      { iconMakerLauncher: true },
+      title,
+      launcherUrl
+    );
+
+    // 重要：Manifestのstart_urlにも同じURLを設定
+    applyIconToHead(
+      iconDataUrl,
+      title,
+      launcherUrl
+    );
+
+    // 準備完了画面
+    document.getElementById("launcher-url-display").textContent =
+      launcherUrl;
+
+    guideBox.style.display = "block";
+
+    guideBox.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
+
+    renderHistory();
+
+    const messages = [];
+
+    if (!historySaved) {
+      messages.push("履歴の保存容量が不足しています。");
+    }
+
+    if (!cacheSaved) {
+      messages.push("アイコン画像のキャッシュを保存できませんでした。");
+    }
+
+    if (messages.length > 0) {
+      alert(messages.join("\n"));
+    }
   }
 
-  // バックアップファイルの読み込み（復元）
-  function importBackup(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const imported = JSON.parse(e.target.result);
-        if (!Array.isArray(imported)) throw new Error('形式エラー');
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
-        renderHistory();
-        alert(`✅ ${imported.length}件のアイコンデータを復元しました！`);
-      } catch (err) {
-        alert('❌ バックアップファイルの読み込みに失敗しました。正しいJSONファイルか確認してね。');
-      }
+  document.getElementById("prepare-button")
+    .addEventListener("click", prepareShortcut);
+
+  // ----------------------------------------
+  // バックアップ書き出し
+  // ----------------------------------------
+
+  function exportBackup() {
+    const history = readHistory();
+
+    if (history.length === 0) {
+      alert("書き出す履歴がありません。");
+      return;
+    }
+
+    const backup = {
+      app: "Custom Icon Maker",
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      items: history
     };
-    reader.readAsText(file);
-    event.target.value = '';
+
+    const blob = new Blob(
+      [JSON.stringify(backup, null, 2)],
+      { type: "application/json" }
+    );
+
+    const objectUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = objectUrl;
+    link.download =
+      "icon-maker-backup-" +
+      new Date().toISOString().slice(0, 10) +
+      ".json";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+    }, 5000);
+
+    document.getElementById("backup-status").textContent =
+      "バックアップを書き出しました。";
   }
 
-  function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-  }
+  document.getElementById("export-button")
+    .addEventListener("click", exportBackup);
+
+  // ----------------------------------------
+  // バックアップ読み込み
+  // ----------------------------------------
+
+  document.getElementById("import-button")
+    .addEventListener("click", () => {
+      document.getElementById("backup-input").click();
+    });
+
+  document.getElementById("backup-input")
+    .addEventListener("change", async event => {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      try {
+        if (file.size > MAX_BACKUP_SIZE) {
+          throw new Error("バックアップファイルが大きすぎます。");
+        }
+
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        const rawItems = Array.isArray(parsed)
+          ? parsed
+          : parsed.items;
+
+        if (!Array.isArray(rawItems)) {
+          throw new Error("バックアップ形式が正しくありません。");
+        }
+
+        const validItems = rawItems
+          .filter(isValidHistoryItem)
+          .slice(0, MAX_HISTORY);
+
+        if (validItems.length === 0) {
+          throw new Error("復元できる履歴がありません。");
+        }
+
+        if (!confirm(
+          validItems.length +
+          "件の履歴を読み込みます。\n現在の履歴は置き換えられます。よろしいですか？"
+        )) {
+          return;
+        }
+
+        const saved = writeHistory(validItems);
+
+        if (!saved) {
+          throw new Error("保存容量が不足しているため復元できませんでした。");
+        }
+
+        renderHistory();
+
+        document.getElementById("backup-status").textContent =
+          validItems.length + "件の履歴を復元しました。";
+
+      } catch (error) {
+        alert("バックアップ読み込みエラー:\n" + error.message);
+      } finally {
+        event.target.value = "";
+      }
+    });
+
+  // ----------------------------------------
+  // 初期起動
+  // ----------------------------------------
+
+  window.addEventListener("DOMContentLoaded", () => {
+    checkLaunchRequest();
+  });
+
+})();
 </script>
+
 </body>
 </html>
 
